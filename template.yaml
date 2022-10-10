@@ -1,0 +1,63 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nombre_namespace #reemplazar para crear namespace
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: nombre_namespace
+  name: Nombre-deployment
+  labels:
+    app: api
+spec:
+  replicas: 1 ##numero de replicas
+  selector:
+    matchLabels:
+      app: apigateway ##match para enlazar al servicio
+  template:
+    metadata:
+      labels:
+        app: apigateway ##martch para enlazar al servicio
+    spec:
+      containers:
+        - name: apigateway-container ##nombre del contenedor
+          image: hfmartinez/app:version1 ##imagen de docker con tag
+          command: [ "python3"] ##comando a correr - si no existe en docker
+          args: [ "app.py" ] ## argumentos de 
+          env:
+            #archivos de ambiente del contenedor
+          ports: 
+            - containerPort: 5000 ##puerto del contenedor
+              protocol: TCP ##protocolo
+      dnsPolicy: "None" ##politica dns
+      dnsConfig:
+        nameservers: 
+        - 10.96.0.10 #direccion del servidor DNS
+        searches: #searches de la U y propios
+        - nombre_namespace.svc.cluster.local
+        - apigateway-ns.svc.cluster.local
+        - otras-fuentes.svc.cluster.local  
+        - svc.cluster.local
+        - cluster.local
+        - uao.edu.co
+        options:
+        - name: ndots
+          value: "6" ## numero de searches
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: nombre_namespace #cambiar el espacio de nombres
+  name: apigateway-service #nombre del servicio
+spec:
+  ports: #puertos y tipo de servicio
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: apigateway
+  type: ClusterIP
